@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Ignorer le dossier .vs de Visual Studio
 .vs/
 
@@ -11,4 +12,19 @@ Thumbs.db
 node_modules
 dist
 .env
+=======
+# Ignorer le dossier .vs de Visual Studio
+.vs/
+
+# Ignorer les dossiers de build
+dist/
+node_modules/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+node_modules
+dist
+.env
+>>>>>>> e305ea883bbfc8587df588a611345e2827fb914f
 .DS_Store

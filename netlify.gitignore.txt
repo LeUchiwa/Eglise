@@ -1,0 +1,14 @@
+# Ignorer le dossier .vs de Visual Studio
+.vs/
+
+# Ignorer les dossiers de build
+dist/
+node_modules/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+node_modules
+dist
+.env
+.DS_Store

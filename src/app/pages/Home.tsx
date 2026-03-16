@@ -140,58 +140,40 @@ export function Home() {
   // Données par défaut pour le leadership (si Supabase est vide)
   const defaultLeadership = [
     {
-      name: "Pasteur Emmanuel Nkolo",
-      role: "Pasteur Principal",
+      name: "Pst. FOPAH Michel Williams",
+      role: "Pasteur de la communauté",
       image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop",
-      description: "Serviteur de Dieu avec 15 ans d'expérience",
+      description: "Serviteur de Dieu dévoué",
     },
     {
-      name: "Ancien Pierre Essomba",
-      role: "Premier Ancien",
+      name: "Anc. FOKOU Patrick",
+      role: "1er Ancien de la communauté",
       image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop",
-      description: "Leader dévoué et conseiller spirituel",
+      description: "Premier ancien, guide spirituel",
     },
     {
-      name: "Diacre Marie Fotso",
-      role: "Responsable des Diaconesses",
+      name: "TCHOUMI Phalone",
+      role: "Première diaconesse",
       image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
-      description: "Au service de la communauté depuis 10 ans",
+      description: "Au service des plus vulnérables",
     },
     {
-      name: "Frère David Onana",
-      role: "Directeur École du Sabbat",
+      name: "Diacre Jean Essomba",
+      role: "Responsable des diacres",
       image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop",
-      description: "Passionné par l'enseignement biblique",
+      description: "Serviteur dévoué au service de l'église",
     },
     {
-      name: "Sœur Grace Mbida",
-      role: "Responsable Jeunesse",
+      name: "Sœur Marie Nkoa",
+      role: "Diaconesse",
       image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop",
-      description: "Dynamique et inspirante pour les jeunes",
+      description: "Au service de la communauté",
     },
     {
-      name: "Frère Joseph Atangana",
-      role: "Trésorier",
+      name: "Frère Pierre Mbarga",
+      role: "Serviteur dévoué",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-      description: "Gestionnaire rigoureux et transparent",
-    },
-    {
-      name: "Sœur Rachel Nguema",
-      role: "Responsable des Ministères de la Femme",
-      image: "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=400&h=400&fit=crop",
-      description: "Inspiratrice et guide pour les femmes de l'église",
-    },
-    {
-      name: "Ancien Samuel Mbele",
-      role: "Secrétaire de l'Église",
-      image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop",
-      description: "Organisateur méticuleux et dévoué",
-    },
-    {
-      name: "Diacre Paul Ekani",
-      role: "Responsable des Ministères Communautaires",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
-      description: "Serviteur au cœur de la communauté",
+      description: "Au service de l'église",
     },
   ];
 
@@ -216,35 +198,23 @@ export function Home() {
       console.log("📦 Données reçues:", data);
 
       if (data && data.length > 0) {
-        // Afficher tous les champs disponibles
-        const firstItem = data[0];
-        console.log("🔑 Tous les champs disponibles:", Object.keys(firstItem));
-        
         // Transformer les données Supabase
         const formattedLeaders = data.map(item => {
-          // Vérifier TOUS les champs possibles pour l'image
+          // Vérifier tous les champs possibles pour l'image
           let imageUrl = 
-            item.imageurl ||    // tout en minuscules
-            item.imageUrl ||    // avec U majuscule
-            item.image ||       // champ "image"
-            item.url ||         // champ "url"
+            item.imageurl ||    
+            item.imageUrl ||    
+            item.image ||       
+            item.url ||         
             item.photo ||
             item.picture ||
             item.avatar ||
             null;
           
-          // Si toujours pas d'image, utiliser la défaut
-          if (!imageUrl) {
-            console.log(`⚠️ Pas d'image pour ${item.title}, utilisation de l'image par défaut`);
-            imageUrl = defaultLeadership[0].image;
-          } else {
-            console.log(`✅ Image trouvée pour ${item.title}:`, imageUrl);
-          }
-          
           return {
             name: item.title || item.name || "Leader",
             role: item.category || item.role || "Membre",
-            image: imageUrl,
+            image: imageUrl || defaultLeadership[0].image,
             description: item.description || "Serviteur de Dieu dévoué",
           };
         });
@@ -270,8 +240,10 @@ export function Home() {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
 
   useEffect(() => {
-    const interval = setInterval(() => setCurrentSlide((prev) => (prev + 1) % totalSlides), 5000);
-    return () => clearInterval(interval);
+    if (totalSlides > 0) {
+      const interval = setInterval(() => setCurrentSlide((prev) => (prev + 1) % totalSlides), 5000);
+      return () => clearInterval(interval);
+    }
   }, [totalSlides]);
 
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
@@ -691,91 +663,142 @@ export function Home() {
       {/* SECTION VIDÉOS RÉCENTES */}
       <RecentVideos />
 
-      {/* Leadership Carousel */}
-      <div className="animate-slideUp relative">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-purple-100 px-4 py-2 rounded-full mb-4">
-            <Star className="w-5 h-5 text-blue-600" />
-            <span className="text-blue-700 font-medium text-sm">Notre Équipe de Direction</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent mb-3">Top Management</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto mb-6">
-            Rencontrez les serviteurs de Dieu qui guident notre communauté avec sagesse et dévouement
-          </p>
-        </div>
+{/* CARROUSEL DES SERVITEURS DÉVOUÉS (LIÉ À LA BASE DE DONNÉES) */}
+<div className="animate-slideUp">
+  <div className="text-center mb-10">
+    <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-2 rounded-full mb-4">
+      <Heart className="w-5 h-5 text-blue-600" />
+      <span className="text-blue-700 font-medium text-sm">Au service de l'église</span>
+    </div>
+    <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent mb-3">Serviteurs Dévoués</h2>
+    <p className="text-gray-600 max-w-2xl mx-auto mb-6">
+      Rencontrez ceux qui œuvrent quotidiennement pour le bien-être spirituel de notre communauté
+    </p>
+  </div>
 
-        {loadingLeadership ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
-          </div>
-        ) : (
-          <div className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 md:p-12">
-            <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 group">
-              <ChevronLeft className="w-6 h-6 text-purple-600 group-hover:text-purple-700" />
-            </button>
-            <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 group">
-              <ChevronRight className="w-6 h-6 text-purple-600 group-hover:text-purple-700" />
-            </button>
+  {loadingLeadership ? (
+    <div className="flex items-center justify-center py-12">
+      <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+    </div>
+  ) : (
+    <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-8 md:p-12">
+      {/* Flèches de navigation */}
+      <button 
+        onClick={prevSlide} 
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 group"
+        disabled={leadership.length <= 3}
+      >
+        <ChevronLeft className="w-6 h-6 text-blue-600 group-hover:text-blue-700" />
+      </button>
+      <button 
+        onClick={nextSlide} 
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 group"
+        disabled={leadership.length <= 3}
+      >
+        <ChevronRight className="w-6 h-6 text-blue-600 group-hover:text-blue-700" />
+      </button>
 
-            <div className="overflow-hidden">
-              <div className="flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-                {Array.from({ length: totalSlides }).map((_, slideIndex) => (
-                  <div key={slideIndex} className="min-w-full flex justify-center gap-6 px-4">
-                    {leadership.slice(slideIndex * 3, slideIndex * 3 + 3).map((leader, idx) => (
-                      <div key={leader.name} className={`group bg-white rounded-2xl overflow-hidden shadow-xl border-2 transition-all duration-700 ${idx === 1 ? "scale-110 border-emerald-500 shadow-2xl z-10" : "scale-95 border-gray-200 hover:scale-100 hover:border-emerald-500"} w-60 flex-shrink-0`}>
-                        <div className="relative overflow-hidden h-60">
-                          <img 
-                            src={leader.image} 
-                            alt={leader.name} 
-                            className={`w-full h-full object-cover transition-all duration-700 ${idx === 1 ? "scale-110" : "group-hover:scale-110"}`}
-                            onError={(e) => {
-                              console.log(`❌ Erreur chargement image pour ${leader.name}:`, leader.image);
-                              e.currentTarget.src = "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop";
-                            }}
-                            onLoad={() => console.log(`✅ Image chargée pour ${leader.name}`)}
-                          />
-                          <div className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-500 ${idx === 1 ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}></div>
-                          <div className={`absolute bottom-0 left-0 right-0 p-6 transform transition-transform duration-500 ${idx === 1 ? "translate-y-0" : "translate-y-full group-hover:translate-y-0"}`}>
-                            <p className={`text-sm font-medium leading-relaxed transition-colors ${idx === 1 ? "text-emerald-200" : "text-white group-hover:text-emerald-200"}`}>
-                              {leader.description}
-                            </p>
+      {/* Carrousel */}
+      <div className="overflow-hidden">
+        <div 
+          className="flex transition-transform duration-700 ease-in-out" 
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {Array.from({ length: totalSlides }).map((_, slideIndex) => (
+            <div key={slideIndex} className="min-w-full flex justify-center gap-8 px-4">
+              {leadership.slice(slideIndex * 3, slideIndex * 3 + 3).map((servant, idx) => {
+                // Couleurs de fond alternatives pour chaque carte
+                const cardColors = [
+                  "bg-gradient-to-br from-white to-blue-50",
+                  "bg-gradient-to-br from-white to-indigo-50",
+                  "bg-gradient-to-br from-white to-purple-50"
+                ];
+                
+                return (
+                  <div 
+                    key={servant.name || idx} 
+                    className={`group w-72 flex-shrink-0 transform transition-all duration-500 hover:-translate-y-2 ${
+                      idx === 1 ? "scale-105 z-10" : "scale-100"
+                    }`}
+                  >
+                    {/* Carte rectangulaire colorée */}
+                    <div className={`${cardColors[idx % 3]} rounded-3xl shadow-xl overflow-hidden border-2 ${
+                      idx === 1 ? "border-blue-500 shadow-2xl" : "border-blue-200 hover:border-blue-400"
+                    } transition-all duration-300`}>
+                      
+                      {/* Image dans un cercle */}
+                      <div className="relative pt-8 pb-4 flex justify-center">
+                        <div className="relative">
+                          <div className="w-40 h-40 rounded-full overflow-hidden ring-4 ring-white shadow-2xl transform transition-transform duration-500 group-hover:scale-105">
+                            <img 
+                              src={servant.image || servant.imageUrl || 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop'} 
+                              alt={servant.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop";
+                              }}
+                            />
+                          </div>
+                          {/* Badge de serviteur - MODIFIÉ ICI */}
+                          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-lg">
+                            Communauté de Ndogbong
                           </div>
                         </div>
-                        <div className={`p-6 ${idx === 1 ? "bg-gradient-to-r from-purple-50 to-pink-50" : "bg-white"}`}>
-                          <h3 className={`text-xl font-bold mb-1 transition-colors ${idx === 1 ? "text-emerald-600" : "text-gray-900 group-hover:text-emerald-600"}`}>
-                            {leader.name}
-                          </h3>
-                          <p className={`font-medium text-sm ${idx === 1 ? "text-emerald-500" : "text-gray-500 group-hover:text-emerald-500"}`}>
-                            {leader.role}
-                          </p>
+                      </div>
+
+                      {/* Informations */}
+                      <div className="p-6 text-center">
+                        <h3 className="text-xl font-bold text-gray-900 mb-1">{servant.name}</h3>
+                        <div className="inline-block bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-1 rounded-full mb-3">
+                          <p className="text-sm font-semibold text-blue-800">{servant.role}</p>
+                        </div>
+                        <p className="text-gray-600 text-sm italic border-t border-blue-200 pt-3 mt-2">
+                          "{servant.description}"
+                        </p>
+                        
+                        {/* Icône de service */}
+                        <div className="mt-4 flex justify-center space-x-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Heart className="w-4 h-4 text-blue-600" />
+                          </div>
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-
-            <div className="flex justify-center space-x-2 mt-8">
-              {Array.from({ length: totalSlides }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`transition-all duration-300 rounded-full ${
-                    currentSlide === index ? "w-12 h-3 bg-gradient-to-r from-slate-700 to-slate-900" : "w-3 h-3 bg-gray-300 hover:bg-gray-400"
-                  }`}
-                  aria-label={`Aller à la slide ${index + 1}`}
-                />
-              ))}
-            </div>
-            <div className="text-center mt-6">
-              <p className="text-sm text-gray-600">
-                <span className="font-bold text-purple-600">{leadership.length}</span> serviteurs dévoués au service de l'église
-              </p>
-            </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
+
+      {/* Indicateurs de slide - affichés seulement si plus de 3 serviteurs */}
+      {leadership.length > 3 && (
+        <div className="flex justify-center space-x-2 mt-8">
+          {Array.from({ length: totalSlides }).map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`transition-all duration-300 rounded-full ${
+                currentSlide === index 
+                  ? "w-12 h-3 bg-gradient-to-r from-blue-600 to-indigo-600" 
+                  : "w-3 h-3 bg-blue-300 hover:bg-blue-400"
+              }`}
+              aria-label={`Aller à la slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Compteur total */}
+      <div className="text-center mt-6">
+        <p className="text-sm text-gray-600">
+          <span className="font-bold text-blue-600 text-lg">{leadership.length}</span> serviteurs dévoués au service de l'église
+        </p>
+      </div>
+    </div>
+  )}
+</div>
 
       {/* Témoignages */}
       <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 md:p-12 animate-slideUp">

@@ -20,7 +20,7 @@ import { Contact } from "./pages/Contact";
 import { BackendDashboard } from "./pages/BackendDashboard";
 import { QuickAddAdmin } from "./pages/QuickAddAdmin";
 import { TithesStats } from "./pages/TithesStats";
-import { ContentDashboard } from './pages/ContentDashboard'
+import { ContentDashboard } from './pages/ContentDashboard';
 
 export const router = createBrowserRouter([
   {
@@ -48,11 +48,18 @@ export const router = createBrowserRouter([
       { path: "annonces", element: <Announcements /> },
       { path: "soutien", element: <Support /> },
       { path: "projets-construction", element: <ConstructionProjects /> },
-      { path: "dimes-offrandes", element: <TithesStats /> },
-      { path: "contact", element: <Contact /> },
+      { path: "contact", element: <Contact /> }, {/* Contact reste dans Layout */}
     ],
   },
   // Routes protégées (en dehors de Layout)
+  {
+    path: "dimes-offrandes",
+    element: (
+      <ProtectedRoute>
+        <TithesStats />
+      </ProtectedRoute>
+    ),
+  },
   {
     path: "admin",
     element: (

@@ -21,11 +21,12 @@ import {
   Settings,
   Users,
   DollarSign,
+  Calendar, // AJOUT : Import de l'icône Calendar
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 
-type ContentType = "books" | "kids" | "videos" | "magazines" | "announcements" | "construction" | "leadership" | "tithes";
+type ContentType = "books" | "kids" | "videos" | "magazines" | "announcements" | "construction" | "leadership" | "tithes" | "events";
 
 interface ContentItem {
   id: string;
@@ -49,6 +50,12 @@ interface ContentItem {
   membres?: number;
   created_at: string;
   updated_at: string;
+  // Champs spécifiques pour les événements
+  endDate?: string;
+  location?: string;
+  attendance?: number;
+  gallery?: string;
+  videos?: string;
 }
 
 export function ContentDashboard() {
@@ -83,6 +90,7 @@ export function ContentDashboard() {
     { id: "construction" as ContentType, name: "Construction", icon: Building2, color: "from-teal-500 to-teal-700" },
     { id: "leadership" as ContentType, name: "Leadership", icon: Users, color: "from-indigo-500 to-indigo-700" },
     { id: "tithes" as ContentType, name: "Offrandes", icon: DollarSign, color: "from-yellow-500 to-yellow-700" },
+    { id: "events" as ContentType, name: "Évènements", icon: Calendar, color: "from-purple-500 to-purple-700" }, // AJOUT
   ];
 
   useEffect(() => {
@@ -143,7 +151,13 @@ export function ContentDashboard() {
       dimes: 0,
       offrandes: 0,
       total: 0,
-      membres: 0
+      membres: 0,
+      // Champs spécifiques pour les événements
+      endDate: "",
+      location: "",
+      attendance: 0,
+      gallery: "",
+      videos: ""
     });
     setIsEditing(true);
   };
@@ -177,6 +191,17 @@ export function ContentDashboard() {
       }
       if (!editingItem.year?.trim()) {
         showMessage("error", "L'année est obligatoire");
+        return;
+      }
+    }
+
+    if (activeSection === "events") {
+      if (!editingItem.date?.trim()) {
+        showMessage("error", "La date de l'événement est obligatoire");
+        return;
+      }
+      if (!editingItem.location?.trim()) {
+        showMessage("error", "Le lieu est obligatoire");
         return;
       }
     }
@@ -260,7 +285,8 @@ export function ContentDashboard() {
 
   const filteredContents = contents.filter(item =>
     item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const currentSection = sections.find(s => s.id === activeSection);
@@ -330,7 +356,7 @@ export function ContentDashboard() {
         )}
 
         {/* Sections Navigation */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-9 gap-4 mb-8">
           {sections.map((section) => {
             const Icon = section.icon;
             const isActive = activeSection === section.id;
@@ -445,18 +471,27 @@ export function ContentDashboard() {
                   >
                     {/* Image Preview */}
                     {item.imageUrl && (
-                      <div className={activeSection === "leadership" ? "aspect-square bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden" : "aspect-video bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden"}>
+                      <div className={
+                        activeSection === "leadership" ? "aspect-square bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden" : 
+                        "aspect-video bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden"
+                      }>
                         <img
                           src={item.imageUrl}
                           alt={item.title}
-                          className={activeSection === "leadership" ? "w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-300" : "w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"}
+                          className={
+                            activeSection === "leadership" ? "w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-300" : 
+                            "w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          }
                         />
                       </div>
                     )}
                     
                     {/* Placeholder si pas d'image */}
                     {!item.imageUrl && (
-                      <div className={activeSection === "leadership" ? "aspect-square bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center" : "aspect-video bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center"}>
+                      <div className={
+                        activeSection === "leadership" ? "aspect-square bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center" : 
+                        "aspect-video bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center"
+                      }>
                         {currentSection && <currentSection.icon className="w-16 h-16 text-gray-400" />}
                       </div>
                     )}
@@ -504,6 +539,33 @@ export function ContentDashboard() {
                           )}
                         </div>
                       )}
+
+                      {/* Events Data */}
+                      {activeSection === "events" && (
+                        <div className="space-y-2 mb-4">
+                          {item.date && (
+                            <p className="text-xs text-purple-600 flex items-center space-x-1">
+                              <span>📅</span>
+                              <span>{new Date(item.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
+                              {item.endDate && (
+                                <span> - {new Date(item.endDate).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
+                              )}
+                            </p>
+                          )}
+                          {item.location && (
+                            <p className="text-xs text-gray-600 flex items-center space-x-1">
+                              <span>📍</span>
+                              <span>{item.location}</span>
+                            </p>
+                          )}
+                          {item.attendance && (
+                            <p className="text-xs text-gray-600 flex items-center space-x-1">
+                              <span>👥</span>
+                              <span>{item.attendance} participants</span>
+                            </p>
+                          )}
+                        </div>
+                      )}
                       
                       {activeSection === "leadership" && item.role && (
                         <p className="text-sm font-semibold text-indigo-600 mb-2 flex items-center space-x-1">
@@ -527,7 +589,7 @@ export function ContentDashboard() {
                           </span>
                         )}
                         
-                        {item.date && (
+                        {item.date && activeSection !== "events" && (
                           <span className="text-xs text-gray-500 flex items-center space-x-1">
                             <span>📅</span>
                             <span>{new Date(item.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}</span>
@@ -545,6 +607,13 @@ export function ContentDashboard() {
                           <span className="text-xs text-red-600 flex items-center space-x-1">
                             <span>▶️</span>
                             <span>Vidéo</span>
+                          </span>
+                        )}
+
+                        {(item.gallery || item.videos) && activeSection === "events" && (
+                          <span className="text-xs text-purple-600 flex items-center space-x-1">
+                            <span>📸</span>
+                            <span>Médias</span>
                           </span>
                         )}
                       </div>
@@ -807,6 +876,156 @@ export function ContentDashboard() {
                         </div>
                       </div>
                     )}
+                  </div>
+                </>
+              ) : activeSection === "events" ? (
+                // Formulaire pour les événements
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Titre de l'événement *
+                    </label>
+                    <input
+                      type="text"
+                      value={editingItem.title}
+                      onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder="Ex: Culte de Jeunesse, Campagne d'évangélisation..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Date de début *
+                      </label>
+                      <input
+                        type="date"
+                        value={editingItem.date || ""}
+                        onChange={(e) => setEditingItem({ ...editingItem, date: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Date de fin (optionnel)
+                      </label>
+                      <input
+                        type="date"
+                        value={editingItem.endDate || ""}
+                        onChange={(e) => setEditingItem({ ...editingItem, endDate: e.target.value })}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Lieu *
+                    </label>
+                    <input
+                      type="text"
+                      value={editingItem.location || ""}
+                      onChange={(e) => setEditingItem({ ...editingItem, location: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder="Ex: Ndogbong Zachman, Salle de jeunesse..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={editingItem.description || ""}
+                      onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                      placeholder="Description détaillée de l'événement..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Nombre de participants
+                    </label>
+                    <input
+                      type="number"
+                      value={editingItem.attendance || ""}
+                      onChange={(e) => setEditingItem({ ...editingItem, attendance: parseInt(e.target.value) || 0 })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder="Ex: 150"
+                      min="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Catégorie
+                    </label>
+                    <select
+                      value={editingItem.category || ""}
+                      onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    >
+                      <option value="">-- Sélectionner une catégorie --</option>
+                      <option value="Culte">Culte</option>
+                      <option value="Jeunesse">Jeunesse</option>
+                      <option value="Prière">Prière</option>
+                      <option value="Évangélisation">Évangélisation</option>
+                      <option value="Social">Social</option>
+                      <option value="Formation">Formation</option>
+                      <option value="Famille">Famille</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Image de couverture
+                    </label>
+                    <input
+                      type="url"
+                      value={editingItem.imageUrl || ""}
+                      onChange={(e) => setEditingItem({ ...editingItem, imageUrl: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder="https://...image.jpg"
+                    />
+                    {editingItem.imageUrl && (
+                      <div className="mt-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <p className="text-sm text-gray-600 mb-2">Aperçu :</p>
+                        <img
+                          src={editingItem.imageUrl}
+                          alt="Preview"
+                          className="w-full max-h-48 object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Galerie d'images (URLs séparées par des virgules)
+                    </label>
+                    <textarea
+                      value={editingItem.gallery || ""}
+                      onChange={(e) => setEditingItem({ ...editingItem, gallery: e.target.value })}
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                      placeholder="https://...image1.jpg, https://...image2.jpg, https://...image3.jpg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Vidéos (URLs séparées par des virgules)
+                    </label>
+                    <textarea
+                      value={editingItem.videos || ""}
+                      onChange={(e) => setEditingItem({ ...editingItem, videos: e.target.value })}
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                      placeholder="https://youtube.com/..., https://youtube.com/..."
+                    />
                   </div>
                 </>
               ) : (

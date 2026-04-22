@@ -21,6 +21,8 @@ import { BackendDashboard } from "./pages/BackendDashboard";
 import { QuickAddAdmin } from "./pages/QuickAddAdmin";
 import { TithesStats } from "./pages/TithesStats";
 import { ContentDashboard } from './pages/ContentDashboard';
+import { Events } from './pages/Events'; // ✅ CHEMIN CORRECT : pages/Events
+import { EventManager } from './components/admin/EventManager'; // ✅ Chemin vers le composant admin
 
 export const router = createBrowserRouter([
   {
@@ -48,7 +50,8 @@ export const router = createBrowserRouter([
       { path: "annonces", element: <Announcements /> },
       { path: "soutien", element: <Support /> },
       { path: "projets-construction", element: <ConstructionProjects /> },
-      { path: "contact", element: <Contact /> }, {/* Contact reste dans Layout */}
+      { path: "contact", element: <Contact /> },
+      { path: "events", element: <Events /> }, // Route publique pour les événements
     ],
   },
   // Routes protégées (en dehors de Layout)
@@ -97,6 +100,15 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <ContentDashboard />
+      </ProtectedRoute>
+    ),
+  },
+  // Route admin pour la gestion des événements
+  {
+    path: "admin/events",
+    element: (
+      <ProtectedRoute>
+        <EventManager />
       </ProtectedRoute>
     ),
   },

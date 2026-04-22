@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
 import {
   Book,
   BookOpen,
@@ -27,6 +27,7 @@ import {
   Youtube,
   Eye,
   Loader2,
+  CalendarDays,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { VideoPlayer } from '../components/VideoPlayer';
@@ -41,7 +42,7 @@ export function Home() {
   const [loadingLeadership, setLoadingLeadership] = useState(true);
   
   const pioneerImage = whiteFamily;
-  const chapelImage = "https://images.unsplash.com/photo-1692449748865-fb1852da0c9b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3aGl0ZSUyMGNodXJjaCUyMGNoYXBlbCUyMGV4dGVyaW9yfGVufDB8fHx8MTc3MjA5OTY5Nnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
+  const chapelImage = "https://images.unsplash.com/photo-1692449748865-fb1852da0c9b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3aGl0ZSUyMGNodXJjaCUyMGNoYXBlbCUyMGV4dGVyaW9yfGVufDB8fHx8MTc3MjA5OTY5Nnww&ixlib=rb-4.1.0&q=80&w=1080";
 
   // Tableau des partenaires
   const partners = [
@@ -93,6 +94,14 @@ export function Home() {
       color: "bg-gradient-to-br from-orange-500 to-orange-700",
       hoverColor: "group-hover:from-orange-600 group-hover:to-orange-800",
     },
+    {
+      icon: CalendarDays,
+      title: "Événements",
+      description: "Découvrez nos albums photos et vidéos des moments forts",
+      path: "/events",
+      color: "bg-gradient-to-br from-pink-500 to-rose-600",
+      hoverColor: "group-hover:from-pink-600 group-hover:to-rose-700",
+    },
   ];
 
   const upcomingEvents = [
@@ -107,14 +116,14 @@ export function Home() {
       title: "École du Sabbat",
       date: "Samedi 28 Février",
       time: "9h30 - 10h30",
-      location: "Salles de classe",
+      location: "Ndogbong Zachman",
       type: "Étude",
     },
     {
       title: "Réunion de Prière",
       date: "Mercredi 3 Mars",
       time: "19h00 - 20h30",
-      location: "Salle de prière",
+      location: "Ndogbong Zachman",
       type: "Prière",
     },
   ];
@@ -122,22 +131,22 @@ export function Home() {
   const testimonials = [
     {
       text: "Cette communauté m'a permis de grandir spirituellement et de trouver ma place dans le service de Dieu.",
-      author: "Marie Dupont",
-      role: "Membre depuis 2020",
+      author: "Cédric MBEN",
+      role: "Membre depuis 2022",
     },
     {
-      text: "Les ressources disponibles sur ce site sont une bénédiction pour ma famille. Merci pour votre dévouement !",
-      author: "Jean-Paul Kamga",
+      text: "Les ressources disponibles sur ce site sont une bénédiction pour la communauté. Merci pour votre dévouement !",
+      author: "Anc. Francois BANDON",
       role: "Membre depuis 2018",
     },
     {
       text: "L'amour et le soutien que j'ai reçus ici ont transformé ma vie. Gloire à Dieu !",
-      author: "Esther Mballa",
-      role: "Membre depuis 2019",
+      author: "Véronique DJIDA",
+      role: "Membre depuis 2013",
     },
   ];
 
-  // Données par défaut pour le leadership (si Supabase est vide)
+  // Données par défaut pour le leadership
   const defaultLeadership = [
     {
       name: "Pst. FOPAH Michel Williams",
@@ -195,12 +204,8 @@ export function Home() {
 
       if (error) throw error;
 
-      console.log("📦 Données reçues:", data);
-
       if (data && data.length > 0) {
-        // Transformer les données Supabase
         const formattedLeaders = data.map(item => {
-          // Vérifier tous les champs possibles pour l'image
           let imageUrl = 
             item.imageurl ||    
             item.imageUrl ||    
@@ -219,10 +224,8 @@ export function Home() {
           };
         });
         
-        console.log("✅ Leaders formatés:", formattedLeaders);
         setLeadership(formattedLeaders);
       } else {
-        console.log("⚠️ Aucune donnée, utilisation des données par défaut");
         setLeadership(defaultLeadership);
       }
     } catch (error) {
@@ -335,7 +338,7 @@ export function Home() {
             </div>
           </div>
 
-          {/* Logos partenaires avec carousel */}
+          {/* Logos partenaires */}
           <div className="mt-16">
             <h3 className="text-center text-gray-600 text-sm uppercase tracking-wider mb-8">
               Nos partenaires
@@ -429,6 +432,8 @@ export function Home() {
         </div>
       </div>
 
+      {/* SECTION ÉVÉNEMENTS SUPPRIMÉE - ELLE N'APPARAÎT PLUS SUR LA PAGE D'ACCUEIL */}
+
       {/* Histoire du Mouvement Adventiste */}
       <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 rounded-2xl p-8 md:p-12 shadow-xl border-2 border-amber-200 animate-slideUp">
         <div className="text-center mb-8">
@@ -449,7 +454,6 @@ export function Home() {
           </button>
         </div>
 
-        {/* Contenu détaillé (affiché uniquement si showHistory est true) */}
         {showHistory && (
           <div className="mt-8 space-y-8 animate-slideUp">
             {/* Image des pionniers */}
@@ -663,142 +667,132 @@ export function Home() {
       {/* SECTION VIDÉOS RÉCENTES */}
       <RecentVideos />
 
-{/* CARROUSEL DES SERVITEURS DÉVOUÉS (LIÉ À LA BASE DE DONNÉES) */}
-<div className="animate-slideUp">
-  <div className="text-center mb-10">
-    <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-2 rounded-full mb-4">
-      <Heart className="w-5 h-5 text-blue-600" />
-      <span className="text-blue-700 font-medium text-sm">Au service de l'église</span>
-    </div>
-    <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent mb-3">Serviteurs Dévoués</h2>
-    <p className="text-gray-600 max-w-2xl mx-auto mb-6">
-      Rencontrez ceux qui œuvrent quotidiennement pour le bien-être spirituel de notre communauté
-    </p>
-  </div>
+      {/* CARROUSEL DES SERVITEURS DÉVOUÉS */}
+      <div className="animate-slideUp">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-2 rounded-full mb-4">
+            <Heart className="w-5 h-5 text-blue-600" />
+            <span className="text-blue-700 font-medium text-sm">Au service de l'église</span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent mb-3">Serviteurs Dévoués</h2>
+          <p className="text-gray-600 max-w-2xl mx-auto mb-6">
+            Rencontrez ceux qui œuvrent quotidiennement pour le bien-être spirituel de notre communauté
+          </p>
+        </div>
 
-  {loadingLeadership ? (
-    <div className="flex items-center justify-center py-12">
-      <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
-    </div>
-  ) : (
-    <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-8 md:p-12">
-      {/* Flèches de navigation */}
-      <button 
-        onClick={prevSlide} 
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 group"
-        disabled={leadership.length <= 3}
-      >
-        <ChevronLeft className="w-6 h-6 text-blue-600 group-hover:text-blue-700" />
-      </button>
-      <button 
-        onClick={nextSlide} 
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 group"
-        disabled={leadership.length <= 3}
-      >
-        <ChevronRight className="w-6 h-6 text-blue-600 group-hover:text-blue-700" />
-      </button>
+        {loadingLeadership ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+          </div>
+        ) : (
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-8 md:p-12">
+            <button 
+              onClick={prevSlide} 
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 group"
+              disabled={leadership.length <= 3}
+            >
+              <ChevronLeft className="w-6 h-6 text-blue-600 group-hover:text-blue-700" />
+            </button>
+            <button 
+              onClick={nextSlide} 
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 group"
+              disabled={leadership.length <= 3}
+            >
+              <ChevronRight className="w-6 h-6 text-blue-600 group-hover:text-blue-700" />
+            </button>
 
-      {/* Carrousel */}
-      <div className="overflow-hidden">
-        <div 
-          className="flex transition-transform duration-700 ease-in-out" 
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        >
-          {Array.from({ length: totalSlides }).map((_, slideIndex) => (
-            <div key={slideIndex} className="min-w-full flex justify-center gap-8 px-4">
-              {leadership.slice(slideIndex * 3, slideIndex * 3 + 3).map((servant, idx) => {
-                // Couleurs de fond alternatives pour chaque carte
-                const cardColors = [
-                  "bg-gradient-to-br from-white to-blue-50",
-                  "bg-gradient-to-br from-white to-indigo-50",
-                  "bg-gradient-to-br from-white to-purple-50"
-                ];
-                
-                return (
-                  <div 
-                    key={servant.name || idx} 
-                    className={`group w-72 flex-shrink-0 transform transition-all duration-500 hover:-translate-y-2 ${
-                      idx === 1 ? "scale-105 z-10" : "scale-100"
-                    }`}
-                  >
-                    {/* Carte rectangulaire colorée */}
-                    <div className={`${cardColors[idx % 3]} rounded-3xl shadow-xl overflow-hidden border-2 ${
-                      idx === 1 ? "border-blue-500 shadow-2xl" : "border-blue-200 hover:border-blue-400"
-                    } transition-all duration-300`}>
+            <div className="overflow-hidden">
+              <div 
+                className="flex transition-transform duration-700 ease-in-out" 
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
+                {Array.from({ length: totalSlides }).map((_, slideIndex) => (
+                  <div key={slideIndex} className="min-w-full flex justify-center gap-8 px-4">
+                    {leadership.slice(slideIndex * 3, slideIndex * 3 + 3).map((servant, idx) => {
+                      const cardColors = [
+                        "bg-gradient-to-br from-white to-blue-50",
+                        "bg-gradient-to-br from-white to-indigo-50",
+                        "bg-gradient-to-br from-white to-purple-50"
+                      ];
                       
-                      {/* Image dans un cercle */}
-                      <div className="relative pt-8 pb-4 flex justify-center">
-                        <div className="relative">
-                          <div className="w-40 h-40 rounded-full overflow-hidden ring-4 ring-white shadow-2xl transform transition-transform duration-500 group-hover:scale-105">
-                            <img 
-                              src={servant.image || servant.imageUrl || 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop'} 
-                              alt={servant.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop";
-                              }}
-                            />
-                          </div>
-                          {/* Badge de serviteur - MODIFIÉ ICI */}
-                          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-lg">
-                            Communauté de Ndogbong
-                          </div>
-                        </div>
-                      </div>
+                      return (
+                        <div 
+                          key={servant.name || idx} 
+                          className={`group w-72 flex-shrink-0 transform transition-all duration-500 hover:-translate-y-2 ${
+                            idx === 1 ? "scale-105 z-10" : "scale-100"
+                          }`}
+                        >
+                          <div className={`${cardColors[idx % 3]} rounded-3xl shadow-xl overflow-hidden border-2 ${
+                            idx === 1 ? "border-blue-500 shadow-2xl" : "border-blue-200 hover:border-blue-400"
+                          } transition-all duration-300`}>
+                            
+                            <div className="relative pt-8 pb-4 flex justify-center">
+                              <div className="relative">
+                                <div className="w-40 h-40 rounded-full overflow-hidden ring-4 ring-white shadow-2xl transform transition-transform duration-500 group-hover:scale-105">
+                                  <img 
+                                    src={servant.image || servant.imageUrl || 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop'} 
+                                    alt={servant.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.src = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop";
+                                    }}
+                                  />
+                                </div>
+                                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-lg">
+                                  Communauté de Ndogbong
+                                </div>
+                              </div>
+                            </div>
 
-                      {/* Informations */}
-                      <div className="p-6 text-center">
-                        <h3 className="text-xl font-bold text-gray-900 mb-1">{servant.name}</h3>
-                        <div className="inline-block bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-1 rounded-full mb-3">
-                          <p className="text-sm font-semibold text-blue-800">{servant.role}</p>
-                        </div>
-                        <p className="text-gray-600 text-sm italic border-t border-blue-200 pt-3 mt-2">
-                          "{servant.description}"
-                        </p>
-                        
-                        {/* Icône de service */}
-                        <div className="mt-4 flex justify-center space-x-2">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Heart className="w-4 h-4 text-blue-600" />
+                            <div className="p-6 text-center">
+                              <h3 className="text-xl font-bold text-gray-900 mb-1">{servant.name}</h3>
+                              <div className="inline-block bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-1 rounded-full mb-3">
+                                <p className="text-sm font-semibold text-blue-800">{servant.role}</p>
+                              </div>
+                              <p className="text-gray-600 text-sm italic border-t border-blue-200 pt-3 mt-2">
+                                "{servant.description}"
+                              </p>
+                              
+                              <div className="mt-4 flex justify-center space-x-2">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <Heart className="w-4 h-4 text-blue-600" />
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Indicateurs de slide - affichés seulement si plus de 3 serviteurs */}
-      {leadership.length > 3 && (
-        <div className="flex justify-center space-x-2 mt-8">
-          {Array.from({ length: totalSlides }).map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`transition-all duration-300 rounded-full ${
-                currentSlide === index 
-                  ? "w-12 h-3 bg-gradient-to-r from-blue-600 to-indigo-600" 
-                  : "w-3 h-3 bg-blue-300 hover:bg-blue-400"
-              }`}
-              aria-label={`Aller à la slide ${index + 1}`}
-            />
-          ))}
-        </div>
-      )}
+            {leadership.length > 3 && (
+              <div className="flex justify-center space-x-2 mt-8">
+                {Array.from({ length: totalSlides }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`transition-all duration-300 rounded-full ${
+                      currentSlide === index 
+                        ? "w-12 h-3 bg-gradient-to-r from-blue-600 to-indigo-600" 
+                        : "w-3 h-3 bg-blue-300 hover:bg-blue-400"
+                    }`}
+                    aria-label={`Aller à la slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
 
-      {/* Compteur total */}
-      <div className="text-center mt-6">
-        <p className="text-sm text-gray-600">
-          <span className="font-bold text-blue-600 text-lg">{leadership.length}</span> serviteurs dévoués au service de l'église
-        </p>
+            <div className="text-center mt-6">
+              <p className="text-sm text-gray-600">
+                <span className="font-bold text-blue-600 text-lg">{leadership.length}</span> serviteurs dévoués au service de l'église
+              </p>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  )}
-</div>
 
       {/* Témoignages */}
       <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 md:p-12 animate-slideUp">

@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Book, BookOpen, Video, FileText, Baby, Heart, Settings, LogIn, LogOut, Bell } from "lucide-react";
+import { Book, BookOpen, Video, FileText, Baby, Heart, Settings, LogIn, LogOut, Bell, Calendar } from "lucide-react"; // AJOUT de Calendar
 import { useAuth } from "../contexts/AuthContext";
 import { AdventistLogo } from "./AdventistLogo";
 
@@ -27,7 +27,8 @@ export function Layout() {
     { path: "/livres-enfants", label: "Livres Enfants", icon: Baby },
     { path: "/videos", label: "Vidéos", icon: Video },
     { path: "/magazines", label: "Magazines", icon: FileText },
-    { path: "/annonces", label: "Annonces", icon: Bell }, 
+    { path: "/annonces", label: "Annonces", icon: Bell },
+    { path: "/events", label: "Évènements", icon: Calendar }, // AJOUT du bouton Évènements
     { path: "/soutien", label: "Soutien", icon: Heart },
   ];
 

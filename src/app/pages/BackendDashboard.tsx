@@ -24,9 +24,14 @@ import {
   Building2,
   Shield,
   LogOut,
+  Plus,
+  Edit,
+  Save,
+  X,
 } from "lucide-react";
 import { projectId, publicAnonKey } from "../../../utils/supabase/info";
 import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../../lib/supabaseClient";
 
 interface Contact {
   id: string;
@@ -63,14 +68,32 @@ interface Stats {
   newSubscribersToday: number;
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  image_url: string | null;
+  date: string;
+  time: string;
+  location: string;
+  category: string;
+  priority: string;
+  author: string;
+  attendees: number;
+  type: string;
+  created_at?: string;
+}
+
 export function BackendDashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "contacts" | "newsletter" | "admins" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "contacts" | "newsletter" | "admins" | "settings" | "announcements">("overview");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [subscribers, setSubscribers] = useState<Newsletter[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalContacts: 0,
     totalSubscribers: 0,
@@ -81,6 +104,25 @@ export function BackendDashboard() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // États pour le modal des annonces
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState<Partial<Announcement>>({
+    title: "",
+    description: "",
+    content: "",
+    image_url: "",
+    date: new Date().toISOString().split('T')[0],
+    time: "19:00",
+    location: "",
+    category: "Jeunesse",
+    priority: "normal",
+    author: "",
+    attendees: 0,
+    type: "announcements",
+  });
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
 
   const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-d44eb65e`;
 
@@ -95,6 +137,7 @@ export function BackendDashboard() {
         loadContacts(),
         loadSubscribers(),
         loadAdmins(),
+        loadAnnouncements(),
       ]);
     } catch (error) {
       console.error("Error loading data:", error);
@@ -107,11 +150,8 @@ export function BackendDashboard() {
   const loadContacts = async () => {
     try {
       const response = await fetch(`${API_BASE}/contact/submissions`, {
-        headers: {
-          Authorization: `Bearer ${publicAnonKey}`,
-        },
+        headers: { Authorization: `Bearer ${publicAnonKey}` },
       });
-
       if (response.ok) {
         const data = await response.json();
         setContacts(data.contacts || []);
@@ -125,11 +165,8 @@ export function BackendDashboard() {
   const loadSubscribers = async () => {
     try {
       const response = await fetch(`${API_BASE}/newsletter/subscribers`, {
-        headers: {
-          Authorization: `Bearer ${publicAnonKey}`,
-        },
+        headers: { Authorization: `Bearer ${publicAnonKey}` },
       });
-
       if (response.ok) {
         const data = await response.json();
         setSubscribers(data.subscribers || []);
@@ -143,11 +180,8 @@ export function BackendDashboard() {
   const loadAdmins = async () => {
     try {
       const response = await fetch(`${API_BASE}/admin/users`, {
-        headers: {
-          Authorization: `Bearer ${publicAnonKey}`,
-        },
+        headers: { Authorization: `Bearer ${publicAnonKey}` },
       });
-
       if (response.ok) {
         const data = await response.json();
         setAdmins(data.admins || []);
@@ -157,17 +191,28 @@ export function BackendDashboard() {
     }
   };
 
+  const loadAnnouncements = async () => {
+    setLoadingAnnouncements(true);
+    try {
+      const { data, error } = await supabase
+        .from('content')
+        .select('*')
+        .eq('type', 'announcements')
+        .order('date', { ascending: false });
+      if (error) throw error;
+      setAnnouncements(data || []);
+    } catch (error) {
+      console.error("Erreur chargement annonces:", error);
+      showMessage("error", "Erreur lors du chargement des annonces");
+    } finally {
+      setLoadingAnnouncements(false);
+    }
+  };
+
   const calculateStats = (contactsList: Contact[], subscribersList: Newsletter[]) => {
     const today = new Date().toISOString().split("T")[0];
-
-    const newContactsToday = contactsList.filter((c) =>
-      c.submittedAt?.startsWith(today)
-    ).length;
-
-    const newSubscribersToday = subscribersList.filter((s) =>
-      s.subscribedAt?.startsWith(today)
-    ).length;
-
+    const newContactsToday = contactsList.filter((c) => c.submittedAt?.startsWith(today)).length;
+    const newSubscribersToday = subscribersList.filter((s) => s.subscribedAt?.startsWith(today)).length;
     setStats({
       totalContacts: contactsList.length,
       totalSubscribers: subscribersList.length,
@@ -179,7 +224,6 @@ export function BackendDashboard() {
 
   const deleteContact = async (id: string) => {
     if (!confirm("Voulez-vous vraiment supprimer ce contact ?")) return;
-
     try {
       const updatedContacts = contacts.filter((c) => c.id !== id);
       const response = await fetch(`${API_BASE}/contact/submissions`, {
@@ -190,7 +234,6 @@ export function BackendDashboard() {
         },
         body: JSON.stringify(updatedContacts),
       });
-
       if (response.ok) {
         setContacts(updatedContacts);
         showMessage("success", "Contact supprimé avec succès");
@@ -205,7 +248,6 @@ export function BackendDashboard() {
       showMessage("error", "Aucune donnée à exporter");
       return;
     }
-
     const headers = Object.keys(data[0]).join(",");
     const rows = data.map((row) =>
       Object.values(row)
@@ -213,7 +255,6 @@ export function BackendDashboard() {
         .join(",")
     );
     const csv = [headers, ...rows].join("\n");
-
     const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -221,7 +262,6 @@ export function BackendDashboard() {
     a.download = `${filename}_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-
     showMessage("success", `Export réussi : ${filename}.csv`);
   };
 
@@ -233,6 +273,111 @@ export function BackendDashboard() {
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  // Gestion des annonces
+  const saveAnnouncement = async () => {
+    if (!announcementForm.title) {
+      showMessage("error", "Le titre est requis");
+      return;
+    }
+    try {
+      if (editingAnnouncement) {
+        const { error } = await supabase
+          .from('content')
+          .update({
+            title: announcementForm.title,
+            description: announcementForm.description || "",
+            content: announcementForm.content || "",
+            image_url: announcementForm.image_url || null,
+            date: announcementForm.date,
+            time: announcementForm.time,
+            location: announcementForm.location,
+            category: announcementForm.category,
+            priority: announcementForm.priority,
+            author: announcementForm.author,
+            attendees: announcementForm.attendees || 0,
+          })
+          .eq('id', editingAnnouncement.id);
+        if (error) throw error;
+        showMessage("success", "Annonce mise à jour");
+      } else {
+        const { error } = await supabase
+          .from('content')
+          .insert({
+            type: "announcements",
+            title: announcementForm.title,
+            description: announcementForm.description || "",
+            content: announcementForm.content || "",
+            image_url: announcementForm.image_url || null,
+            date: announcementForm.date,
+            time: announcementForm.time,
+            location: announcementForm.location,
+            category: announcementForm.category,
+            priority: announcementForm.priority,
+            author: announcementForm.author,
+            attendees: announcementForm.attendees || 0,
+          });
+        if (error) throw error;
+        showMessage("success", "Annonce créée");
+      }
+      resetAnnouncementForm();
+      await loadAnnouncements();
+    } catch (error) {
+      console.error("Erreur sauvegarde:", error);
+      showMessage("error", "Erreur lors de la sauvegarde");
+    }
+  };
+
+  const deleteAnnouncement = async (id: string) => {
+    if (!confirm("Voulez-vous vraiment supprimer cette annonce ?")) return;
+    try {
+      const { error } = await supabase.from('content').delete().eq('id', id);
+      if (error) throw error;
+      showMessage("success", "Annonce supprimée");
+      await loadAnnouncements();
+    } catch (error) {
+      console.error("Erreur suppression:", error);
+      showMessage("error", "Erreur lors de la suppression");
+    }
+  };
+
+  const resetAnnouncementForm = () => {
+    setEditingAnnouncement(null);
+    setShowAnnouncementModal(false);
+    setAnnouncementForm({
+      title: "",
+      description: "",
+      content: "",
+      image_url: "",
+      date: new Date().toISOString().split('T')[0],
+      time: "19:00",
+      location: "",
+      category: "Jeunesse",
+      priority: "normal",
+      author: "",
+      attendees: 0,
+      type: "announcements",
+    });
+  };
+
+  const openEditModal = (announcement: Announcement) => {
+    setEditingAnnouncement(announcement);
+    setAnnouncementForm({
+      title: announcement.title,
+      description: announcement.description || "",
+      content: announcement.content || "",
+      image_url: announcement.image_url || "",
+      date: announcement.date,
+      time: announcement.time,
+      location: announcement.location,
+      category: announcement.category,
+      priority: announcement.priority,
+      author: announcement.author,
+      attendees: announcement.attendees,
+      type: "announcements",
+    });
+    setShowAnnouncementModal(true);
   };
 
   const filteredContacts = contacts.filter(
@@ -300,11 +445,7 @@ export function BackendDashboard() {
                 : "bg-red-50 text-red-800 border border-red-200"
             }`}
           >
-            {message.type === "success" ? (
-              <CheckCircle2 className="w-6 h-6" />
-            ) : (
-              <AlertCircle className="w-6 h-6" />
-            )}
+            {message.type === "success" ? <CheckCircle2 className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
             <span className="font-medium">{message.text}</span>
           </div>
         </div>
@@ -358,6 +499,17 @@ export function BackendDashboard() {
             <span>Administrateurs ({admins.length})</span>
           </button>
           <button
+            onClick={() => setActiveTab("announcements")}
+            className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${
+              activeTab === "announcements"
+                ? "bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-md"
+                : "text-slate-700 hover:bg-slate-100"
+            }`}
+          >
+            <Megaphone className="w-5 h-5" />
+            <span>Annonces ({announcements.length})</span>
+          </button>
+          <button
             onClick={() => setActiveTab("settings")}
             className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${
               activeTab === "settings"
@@ -383,7 +535,6 @@ export function BackendDashboard() {
             {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="space-y-8">
-                {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-xl p-6 shadow-lg">
                     <div className="flex items-center justify-between mb-4">
@@ -394,7 +545,6 @@ export function BackendDashboard() {
                     <p className="text-blue-100 text-sm">Contacts Total</p>
                     <p className="text-xs text-blue-200 mt-2">+{stats.newContactsToday} aujourd'hui</p>
                   </div>
-
                   <div className="bg-gradient-to-br from-green-500 to-green-700 text-white rounded-xl p-6 shadow-lg">
                     <div className="flex items-center justify-between mb-4">
                       <Users className="w-10 h-10 opacity-80" />
@@ -404,7 +554,6 @@ export function BackendDashboard() {
                     <p className="text-green-100 text-sm">Abonnés Newsletter</p>
                     <p className="text-xs text-green-200 mt-2">+{stats.newSubscribersToday} aujourd'hui</p>
                   </div>
-
                   <div className="bg-gradient-to-br from-purple-500 to-purple-700 text-white rounded-xl p-6 shadow-lg">
                     <div className="flex items-center justify-between mb-4">
                       <Shield className="w-10 h-10 opacity-80" />
@@ -414,7 +563,6 @@ export function BackendDashboard() {
                     <p className="text-purple-100 text-sm">Administrateurs</p>
                     <p className="text-xs text-purple-200 mt-2">Actifs</p>
                   </div>
-
                   <div className="bg-gradient-to-br from-orange-500 to-orange-700 text-white rounded-xl p-6 shadow-lg">
                     <div className="flex items-center justify-between mb-4">
                       <Database className="w-10 h-10 opacity-80" />
@@ -425,8 +573,6 @@ export function BackendDashboard() {
                     <p className="text-xs text-orange-200 mt-2">Supabase actif</p>
                   </div>
                 </div>
-
-                {/* Quick Links */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                   <h2 className="text-2xl font-bold text-slate-900 mb-6">Accès Rapide aux Sections</h2>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -444,8 +590,6 @@ export function BackendDashboard() {
                     ))}
                   </div>
                 </div>
-
-                {/* Quick Actions */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <button
                     onClick={() => navigate("/admin")}
@@ -455,7 +599,6 @@ export function BackendDashboard() {
                     <h3 className="text-lg font-bold text-slate-900 mb-2">Gérer le Contenu</h3>
                     <p className="text-sm text-slate-600">Modifiez les textes, images et médias du site</p>
                   </button>
-
                   <button
                     onClick={() => navigate("/super-admin")}
                     className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-lg transition-all text-left group"
@@ -464,7 +607,6 @@ export function BackendDashboard() {
                     <h3 className="text-lg font-bold text-slate-900 mb-2">Gérer les Admins</h3>
                     <p className="text-sm text-slate-600">Ajoutez ou supprimez des administrateurs</p>
                   </button>
-
                   <button
                     onClick={() => navigate("/admin-construction")}
                     className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-lg transition-all text-left group"
@@ -503,7 +645,6 @@ export function BackendDashboard() {
                       </button>
                     </div>
                   </div>
-
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-slate-50 border-b border-slate-200">
@@ -523,28 +664,17 @@ export function BackendDashboard() {
                             <td className="px-4 py-3 text-sm font-medium text-slate-900">{contact.name}</td>
                             <td className="px-4 py-3 text-sm text-slate-600">{contact.email}</td>
                             <td className="px-4 py-3 text-sm text-slate-600">{contact.phone || "-"}</td>
-                            <td className="px-4 py-3 text-sm text-slate-600 max-w-xs truncate">
-                              {contact.message || "-"}
-                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-600 max-w-xs truncate">{contact.message || "-"}</td>
                             <td className="px-4 py-3">
                               {contact.newsletter ? (
-                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                  Oui
-                                </span>
+                                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">Oui</span>
                               ) : (
-                                <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-                                  Non
-                                </span>
+                                <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">Non</span>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-sm text-slate-600">
-                              {new Date(contact.submittedAt).toLocaleDateString("fr-FR")}
-                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-600">{new Date(contact.submittedAt).toLocaleDateString("fr-FR")}</td>
                             <td className="px-4 py-3">
-                              <button
-                                onClick={() => deleteContact(contact.id)}
-                                className="text-red-600 hover:text-red-700 transition-colors"
-                              >
+                              <button onClick={() => deleteContact(contact.id)} className="text-red-600 hover:text-red-700">
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </td>
@@ -589,7 +719,6 @@ export function BackendDashboard() {
                       </button>
                     </div>
                   </div>
-
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-slate-50 border-b border-slate-200">
@@ -607,13 +736,9 @@ export function BackendDashboard() {
                             <td className="px-4 py-3 text-sm font-medium text-slate-900">{subscriber.name}</td>
                             <td className="px-4 py-3 text-sm text-slate-600">{subscriber.email}</td>
                             <td className="px-4 py-3 text-sm text-slate-600">{subscriber.phone || "-"}</td>
-                            <td className="px-4 py-3 text-sm text-slate-600">
-                              {new Date(subscriber.subscribedAt).toLocaleDateString("fr-FR")}
-                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-600">{new Date(subscriber.subscribedAt).toLocaleDateString("fr-FR")}</td>
                             <td className="px-4 py-3">
-                              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                Actif
-                              </span>
+                              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">Actif</span>
                             </td>
                           </tr>
                         ))}
@@ -644,19 +769,11 @@ export function BackendDashboard() {
                       <span>Gérer les Admins</span>
                     </button>
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {admins.map((admin) => (
-                      <div
-                        key={admin.email}
-                        className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                      >
+                      <div key={admin.email} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-center space-x-3 mb-3">
-                          <div className={`p-2 rounded-full ${
-                            admin.role === "super_admin" 
-                              ? "bg-purple-100 text-purple-600" 
-                              : "bg-blue-100 text-blue-600"
-                          }`}>
+                          <div className={`p-2 rounded-full ${admin.role === "super_admin" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"}`}>
                             <Shield className="w-5 h-5" />
                           </div>
                           <div className="flex-1">
@@ -665,22 +782,93 @@ export function BackendDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                            admin.role === "super_admin"
-                              ? "bg-purple-100 text-purple-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${admin.role === "super_admin" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
                             {admin.role === "super_admin" ? "Super Admin" : "Admin"}
                           </span>
-                          {admin.createdAt && (
-                            <span className="text-xs text-slate-400">
-                              {new Date(admin.createdAt).toLocaleDateString("fr-FR")}
-                            </span>
-                          )}
+                          {admin.createdAt && <span className="text-xs text-slate-400">{new Date(admin.createdAt).toLocaleDateString("fr-FR")}</span>}
                         </div>
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Announcements Tab */}
+            {activeTab === "announcements" && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-slate-900">Gestion des Annonces</h2>
+                    <button
+                      onClick={() => {
+                        resetAnnouncementForm();
+                        setShowAnnouncementModal(true);
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Nouvelle annonce</span>
+                    </button>
+                  </div>
+                  {loadingAnnouncements ? (
+                    <div className="text-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-slate-400 mx-auto" />
+                    </div>
+                  ) : announcements.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500">
+                      <Megaphone className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                      <p>Aucune annonce pour le moment</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Titre</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Catégorie</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Date</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Heure</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Lieu</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Priorité</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Intéressés</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {announcements.map((ann) => (
+                            <tr key={ann.id} className="hover:bg-slate-50">
+                              <td className="px-4 py-3 text-sm font-medium text-slate-900">{ann.title}</td>
+                              <td className="px-4 py-3 text-sm text-slate-600">{ann.category}</td>
+                              <td className="px-4 py-3 text-sm text-slate-600">{ann.date}</td>
+                              <td className="px-4 py-3 text-sm text-slate-600">{ann.time}</td>
+                              <td className="px-4 py-3 text-sm text-slate-600">{ann.location}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  ann.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                  ann.priority === 'urgent' ? 'bg-orange-100 text-orange-700' :
+                                  'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {ann.priority === 'high' ? 'Important' : ann.priority === 'urgent' ? 'Urgent' : 'Normal'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600">{ann.attendees}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center space-x-2">
+                                  <button onClick={() => openEditModal(ann)} className="text-blue-600 hover:text-blue-800">
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button onClick={() => deleteAnnouncement(ann.id)} className="text-red-600 hover:text-red-800">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -690,7 +878,6 @@ export function BackendDashboard() {
               <div className="space-y-6">
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                   <h2 className="text-2xl font-bold text-slate-900 mb-6">Paramètres du Backend</h2>
-                  
                   <div className="space-y-6">
                     <div className="border-b border-slate-200 pb-6">
                       <h3 className="text-lg font-semibold text-slate-900 mb-3">Base de données</h3>
@@ -713,7 +900,6 @@ export function BackendDashboard() {
                         </div>
                       </div>
                     </div>
-
                     <div className="border-b border-slate-200 pb-6">
                       <h3 className="text-lg font-semibold text-slate-900 mb-3">Informations Système</h3>
                       <div className="space-y-2 text-sm">
@@ -731,7 +917,6 @@ export function BackendDashboard() {
                         </div>
                       </div>
                     </div>
-
                     <div>
                       <h3 className="text-lg font-semibold text-slate-900 mb-3">Actions Rapides</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -758,6 +943,156 @@ export function BackendDashboard() {
           </>
         )}
       </div>
+
+      {/* Modal d'ajout/édition d'annonce */}
+      {showAnnouncementModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900">
+                {editingAnnouncement ? "Modifier l'annonce" : "Nouvelle annonce"}
+              </h3>
+              <button onClick={() => setShowAnnouncementModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Titre *</label>
+                <input
+                  type="text"
+                  value={announcementForm.title || ""}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description courte</label>
+                <textarea
+                  value={announcementForm.description || ""}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, description: e.target.value })}
+                  rows={2}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Contenu long (communiqué)</label>
+                <textarea
+                  value={announcementForm.content || ""}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                  rows={5}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">URL de l'image</label>
+                <input
+                  type="text"
+                  value={announcementForm.image_url || ""}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, image_url: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={announcementForm.date || ""}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Heure</label>
+                  <input
+                    type="time"
+                    value={announcementForm.time || "19:00"}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, time: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Lieu</label>
+                <input
+                  type="text"
+                  value={announcementForm.location || ""}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, location: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Catégorie</label>
+                  <select
+                    value={announcementForm.category || "Jeunesse"}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, category: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                  >
+                    <option>Jeunesse</option>
+                    <option>Étude Biblique</option>
+                    <option>Service</option>
+                    <option>Prière</option>
+                    <option>Famille</option>
+                    <option>Évangélisation</option>
+                    <option>Formation</option>
+                    <option>Musique</option>
+                    <option>Comité</option>
+                    <option>Administration</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Priorité</label>
+                  <select
+                    value={announcementForm.priority || "normal"}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, priority: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="high">Important</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Organisateur</label>
+                <input
+                  type="text"
+                  value={announcementForm.author || ""}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, author: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre d'intéressés (départ)</label>
+                <input
+                  type="number"
+                  value={announcementForm.attendees || 0}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, attendees: parseInt(e.target.value) || 0 })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                />
+              </div>
+            </div>
+            <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowAnnouncementModal(false)}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={saveAnnouncement}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
+              >
+                <Save className="w-4 h-4" />
+                <span>Enregistrer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

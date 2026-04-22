@@ -22,11 +22,13 @@ import {
   Plus,
   Download,
   Building2,
+  Calendar, // AJOUT: Import de l'icône Calendar
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { projectId } from "../../../utils/supabase/info";
 import { useNavigate } from "react-router";
 import { ItemsManager } from "../components/admin/ItemsManager";
+import { Link } from "react-router-dom"; // AJOUT: Import de Link
 
 interface ContentData {
   [key: string]: string;
@@ -194,6 +196,13 @@ export function AdminPrivate() {
         { key: "support_paypal", label: "PayPal", type: "text" },
         { key: "support_thank_you", label: "Message de remerciement", type: "textarea" },
       ],
+    },
+    // NOUVELLE SECTION POUR LES ÉVÉNEMENTS
+    {
+      id: "events",
+      title: "Évènements",
+      icon: Calendar,
+      fields: [], // Champ vide car on utilisera ItemsManager
     },
     {
       id: "seo",
@@ -633,6 +642,14 @@ export function AdminPrivate() {
               </p>
             </div>
             <div className="flex items-center space-x-3">
+              {/* NOUVEAU BOUTON POUR LA GESTION DES ÉVÉNEMENTS */}
+              <Link
+                to="/admin/events"
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <Calendar className="w-5 h-5" />
+                <span className="hidden md:inline">Événements</span>
+              </Link>
               <button
                 onClick={() => navigate("/admin-construction")}
                 className="flex items-center space-x-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
@@ -743,7 +760,7 @@ export function AdminPrivate() {
               <div className="space-y-6">
                 {activeSectonData?.fields.length === 0 ? (
                   // Render Items Manager for dynamic sections
-                  <>
+                  <div className="space-y-6">
                     {activeSection === "announcements" && (
                       <ItemsManager
                         title="Gestion des Annonces"
@@ -758,6 +775,7 @@ export function AdminPrivate() {
                         accessToken={accessToken!}
                       />
                     )}
+                    
                     {activeSection === "educational_books" && (
                       <ItemsManager
                         title="Gestion des Livres Éducatifs"
@@ -775,6 +793,7 @@ export function AdminPrivate() {
                         accessToken={accessToken!}
                       />
                     )}
+                    
                     {activeSection === "children_books" && (
                       <ItemsManager
                         title="Gestion des Livres Enfants"
@@ -791,6 +810,7 @@ export function AdminPrivate() {
                         accessToken={accessToken!}
                       />
                     )}
+                    
                     {activeSection === "magazines" && (
                       <ItemsManager
                         title="Gestion des Magazines"
@@ -807,7 +827,29 @@ export function AdminPrivate() {
                         accessToken={accessToken!}
                       />
                     )}
-                  </>
+                    
+                    {/* SECTION ÉVÉNEMENTS - AJOUTÉE ICI */}
+                    {activeSection === "events" && (
+                      <ItemsManager
+                        title="Gestion des Événements"
+                        storageKey="events_list"
+                        fields={[
+                          { key: "title", label: "Titre de l'événement", type: "text", required: true },
+                          { key: "date", label: "Date", type: "date", required: true },
+                          { key: "endDate", label: "Date de fin (optionnel)", type: "date" },
+                          { key: "location", label: "Lieu", type: "text", required: true },
+                          { key: "description", label: "Description", type: "textarea", required: true },
+                          { key: "attendance", label: "Nombre de participants", type: "text" },
+                          { key: "category", label: "Catégorie", type: "text" },
+                          { key: "cover", label: "Image de couverture", type: "image", required: true },
+                          { key: "gallery", label: "Galerie d'images (séparées par des virgules)", type: "textarea" },
+                          { key: "videos", label: "Vidéos (URLs séparées par des virgules)", type: "textarea" },
+                        ]}
+                        apiBase={API_BASE}
+                        accessToken={accessToken!}
+                      />
+                    )}
+                  </div>
                 ) : (
                   // Render form fields for static sections
                   activeSectonData?.fields.map(renderField)
